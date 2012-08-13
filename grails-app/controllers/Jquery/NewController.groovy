@@ -1,5 +1,6 @@
 package Jquery
-
+import grails.converters.JSON
+import Jquery.Tab
 class NewController {
       static navigation = [
         [group: 'tabs', action: 'tabs', title: 'On going development on Tabs', order: 0],
@@ -123,5 +124,95 @@ class NewController {
        def tabs = {
         params.max = Math.min(params.max ? params.int('max') : 10, 100)
         [newInstanceList: New.list(params), newInstanceTotal: New.count()]
+    }
+     def jq_tab_list = {
+      def sortIndex = params.sidx ?: 'name'
+      def sortOrder  = params.sord ?: 'asc'
+
+      def maxRows = Integer.valueOf(params.rows)      
+      def currentPage = Integer.valueOf(params.page) ?: 1
+      def rowOffset = currentPage == 1 ? 0 : (currentPage - 1) * maxRows
+
+      def tabs = Tab.createCriteria().list(max:maxRows, offset:rowOffset) {
+
+            // first name case insensitive where the field begins with the search term
+            if (params.name)
+                ilike('name',params.name + '%')
+
+            // last name case insensitive where the field begins with the search term
+            if (params.city)
+                ilike('city',params.lastName + '%')
+
+           
+        
+            // set the order and direction
+            order(sortIndex, sortOrder).ignoreCase()
+      }
+
+      def totalRows = tabs.totalCount
+      def numberOfPages = Math.ceil(totalRows / maxRows)
+
+      def jsonCells = tabs.collect {
+            [cell: [it.name,
+                    it.city        
+                ], id: it.id]
+        }
+        def jsonData= [rows: jsonCells,page:currentPage,records:totalRows,total:numberOfPages]
+        render  jsonData as JSON
+       
+    }
+
+
+    def jq_edit_tab = {
+      def tab = null
+      def message = ""
+      def state = "FAIL"
+      def id
+
+      // determine our action
+      switch (params.oper) {
+        case 'add':
+          // add instruction sent
+          tab = new Tab(params)
+          if (! tab.hasErrors() && tab.save()) {
+            message = "City  ${tab.name} ${tab.city} Added"
+            id = tab.id
+            state = "OK"
+          } else {
+            message = "Could Not Save City"
+          }
+
+          break;
+        case 'del':
+          // check customer exists
+         tab = Tab.get(params.id)
+          if (tab) {
+            // delete customer
+            tab.delete()
+            message = "Tab  ${tab.name} ${tab.city} Deleted"
+            state = "OK"
+          }
+          break;
+        default:
+          // default edit action
+          // first retrieve the customer by its ID
+          tab = Tab.get(params.id)
+          if (tab) {
+            // set the properties according to passed in parameters
+            tab.properties = params
+            if (! tab.hasErrors() && tab.save()) {
+              message = "City  ${tab.name} ${tab.city} Updated"
+              id = tab.id
+              state = "OK"
+            } else {
+              message = "Could Not Update Customer"
+            }
+          }
+          break;
+      }
+
+      def response = [message:message,state:state,id:id]
+
+      render response as JSON
     }
 }

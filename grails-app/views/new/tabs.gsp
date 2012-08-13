@@ -202,54 +202,115 @@ Large School Consortium Institution Profile
   <DIV id="tab_4">
     
  
-
-          <div class="body">
+      <div class="body">
             <h1>City List</h1>
 
+            <div id='message' class="message" style="display:none;"></div>
+            
             <!-- table tag will hold our grid -->
             <table id="tab_list" class="scroll jqTable" cellpadding="0" cellspacing="0"></table>
             <!-- pager will hold our paginator -->
             <div id="tab_list_pager" class="scroll" style="text-align:center;"></div>
-             <script type="text/javascript">
-//            /* when the page has finished loading.. execute the follow */
-//            $(document).ready(function () {
-//                jQuery("#tab_list").jqGrid({
-//                  url:'jq_tab_list',
-//                  datatype: "json",
-//                  colNames:['Name','City','id'],
-//                  colModel:[
-//                    {name:'name'},
-//                    {name:'city'},
-//                    {name:'id'}
-//                  ],
-//                  pager: jQuery('#tab_list_pager'),
-//                  viewrecords: true,
-//                  gridview: true
-//                });
-//            });
-             
-             $("#bedata").click(function(){ 
-               var gr = jQuery("#editgrid").jqGrid('getGridParam','selrow'); 
-               if( gr != null ) jQuery("#editgrid").jqGrid('editGridRow',gr,{height:280,reloadAfterSubmit:false}); 
-               else alert("Please Select Row"); });
-             jQuery("#tab_list").jqGrid({ 
-               url:'jq_tab_list', 
-               datatype: "json",
-               colNames:['Name','City', 'id'], 
-               colModel:[ {name:'name', width:200}, 
-                 {name:'city', width:250,  align:"right"}, 
-                 {name:'id', width:10}, 
-                ], rowNum:10, 
-                rowList:[10,20,30], 
-                pager: '#tab_list_pager', 
-                sortname: 'id', 
-                viewrecords: true, 
-                sortorder: "desc", 
-                caption:"People and Cities" }); 
-              jQuery("#tab_list").jqGrid('navGrid','#tab_list_pager',{edit:true,add:false,del:false});
+
+            <div style="margin-top:5px">
+              <input class="ui-corner-all" id="btnAdd" type="button" value="Add Record"/>
+              <input class="ui-corner-all" id="btnEdit" type="button" value="Edit Selected Record"/>
+              <input class="ui-corner-all" id="btnDelete" type="button" value="Delete Selected Record"/>
+            </div>
+
+
+            <script type="text/javascript">
+            var lastSelectedId;
+            
+            /* when the page has finished loading.. execute the following */
+            $(document).ready(function () {
+
+                // set on click events for non toolbar buttons
+                $("#btnAdd").click(function(){
+                  $("#tab_list").jqGrid("editGridRow","new",
+                     {addCaption:'Create New City',
+                     afterSubmit:afterSubmitEvent,
+                     savekey:[true,13]});
+                });
+
+                $("#btnEdit").click(function(){
+                   var gr = $("#tab_list").jqGrid('getGridParam','selrow');
+                   if( gr != null )
+                     $("#tab_list").jqGrid('editGridRow',gr,
+                     {closeAfterEdit:true,
+                      afterSubmit:afterSubmitEvent
+                     });
+                   else
+                     alert("Please Select Row");
+                });
+
+                $("#btnDelete").click(function(){
+                  var gr = $("#tab_list").jqGrid('getGridParam','selrow');
+                  if( gr != null )
+                    $("#tab_list").jqGrid('delGridRow',gr,
+                     {afterSubmit:afterSubmitEvent});
+                  else
+                    alert("Please Select Row to delete!");
+                });
+                
+
+                $("#tab_list").jqGrid({
+                  url:'jq_tab_list',
+                  editurl:'jq_edit_tab',
+                  datatype: "json",
+                  colNames:['Name','City','id'],
+                  colModel:[
+                    {name:'name',
+                     editable:true,
+                     editrules:{required:true}
+                    },
+                    {name:'city',
+                     editable:true,
+                     editrules:{required:true}
+                    },
+                    {name:'id',hidden:true}
+                  ],
+                  rowNum:2,
+                  rowList:[1,2,3,4],
+                  pager:'#tab_list_pager',
+                  viewrecords: true,
+                  gridview: true
+
+                }).navGrid('#tab_list_pager',
+                    {add:true,edit:true,del:true,search:false,refresh:true},      // which buttons to show?
+                    {closeAfterEdit:true,
+                     afterSubmit:afterSubmitEvent
+                    },                                   // edit options
+                    {addCaption:'Create New City',
+                     afterSubmit:afterSubmitEvent,
+                     savekey:[true,13]},            // add options
+                    {afterSubmit:afterSubmitEvent}  // delete options
+                );
+
+
+                $("#tab_list").jqGrid('filterToolbar',{autosearch:true});
+            });
+
+            function afterSubmitEvent(response, postdata) {
+                var success = true;
+                console.log ('here')
+                var json = eval('(' + response.responseText + ')');
+                var message = json.message;
+
+                if(json.state == 'FAIL') {
+                    success = false;
+                } else {
+                  $('#message').html(message);
+                  $('#message').show().fadeOut(10000);  // 10 second fade
+                }
+
+                var new_id = json.id
+                return [success,message,new_id];
+            }
+
             </script>
-    
-  </div>
+      </div>
+ 
 </DIV>
 </DIV>
 <DIV class="header-footer ui-state-default ui-corner-all" style="padding: 3px 5px 5px; text-align: center; margin-top: 1ex;">

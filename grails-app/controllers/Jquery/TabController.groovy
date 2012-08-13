@@ -100,18 +100,7 @@ class TabController {
             redirect(action: "list")
         }
     }
-    
-   //    return JSON list of customers
-   def jq_tab_list = {
-    def tabs = Tab.list()
-      def jsonCells = tabs.collect {
-          [cell: [it.name,
-                 it.city, it.id
-               ], id: it.id]
-        }
-       def jsonData= [rows: jsonCells]
-       render jsonData as JSON
- }
+  
    
     
 }
